@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
-import { fetchAllTasksNoAuth, deleteTask, updateTask } from '../api';
+import { fetchAllTasksNoAuth, deleteTask, updateTask, createTask } from '../api';
 import { format, parseISO } from 'date-fns';
 
 const TaskList = () => {
@@ -33,6 +33,7 @@ const TaskList = () => {
   const [error, setError] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
@@ -71,9 +72,9 @@ const TaskList = () => {
     const results = tasks.filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = !filterStatus || filterStatus === '' || task.status === filterStatus;
-        const matchesPriority = !filterPriority || filterPriority === '' || task.priority === filterPriority;
-        const matchesDueDate = !filterDueDate || task.dueDate && parseISO(task.dueDate).toISOString().split('T')[0] === filterDueDate;
+      const matchesStatus = !filterStatus || filterStatus === '' || task.status === filterStatus;
+      const matchesPriority = !filterPriority || filterPriority === '' || task.priority === filterPriority;
+      const matchesDueDate = !filterDueDate || (task.dueDate && parseISO(task.dueDate).toISOString().split('T')[0] === filterDueDate);
 
       return matchesSearch && matchesStatus && matchesPriority && matchesDueDate;
     });
@@ -103,6 +104,15 @@ const TaskList = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedTask(null);
+    resetTaskFields();
+  };
+
+  const handleCloseCreateDialog = () => {
+    setOpenCreateDialog(false);
+    resetTaskFields();
+  };
+
+  const resetTaskFields = () => {
     setTaskTitle('');
     setTaskDescription('');
     setTaskDueDate('');
@@ -110,8 +120,16 @@ const TaskList = () => {
     setTaskStatus('');
   };
 
+  const validateTaskFields = () => {
+    return taskTitle && taskDescription && taskDueDate && taskPriority && taskStatus;
+  };
+
   const handleUpdateTask = async () => {
     if (selectedTask) {
+      if (!validateTaskFields()) {
+        setError('Please fill in all fields.');
+        return;
+      }
       try {
         await updateTask(selectedTask._id, {
           title: taskTitle,
@@ -132,17 +150,40 @@ const TaskList = () => {
     }
   };
 
+  const handleCreateTask = async () => {
+    if (!validateTaskFields()) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    try {
+      const newTask = {
+        title: taskTitle,
+        description: taskDescription,
+        dueDate: taskDueDate,
+        priority: taskPriority,
+        status: taskStatus,
+        userId: userid2
+      };
+      const createdTask = await createTask(newTask);
+      setTasks([...tasks, createdTask]);
+      handleCloseCreateDialog();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const formatDate = (dateString) => {
     return format(parseISO(dateString), 'MMMM dd, yyyy');
   };
 
   return (
     <Container maxWidth="lg">
-      <AppBar position="static">
+      <AppBar position="sticky">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
             Task List
           </Typography>
+          <Button color="inherit" onClick={() => setOpenCreateDialog(true)}>New Task</Button>
           <div style={{ position: 'relative', marginRight: '16px' }}>
             <SearchIcon style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
             <InputBase
@@ -201,6 +242,9 @@ const TaskList = () => {
             fullWidth
             margin="dense"
             variant="outlined"
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
         </Box>
 
@@ -271,6 +315,9 @@ const TaskList = () => {
             variant="outlined"
             value={taskDueDate}
             onChange={(e) => setTaskDueDate(e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
           <TextField
             select
@@ -309,6 +356,84 @@ const TaskList = () => {
           </Button>
           <Button onClick={handleUpdateTask} color="primary">
             Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog for Creating New Task */}
+      <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
+        <DialogTitle>Create New Task</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Task Title"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Task Description"
+            type="text"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={4}
+            value={taskDescription}
+            onChange={(e) => setTaskDescription(e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Due Date"
+            type="date"
+            fullWidth
+            variant="outlined"
+            value={taskDueDate}
+            onChange={(e) => setTaskDueDate(e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
+          <TextField
+            select
+            label="Priority"
+            value={taskPriority}
+            onChange={(e) => setTaskPriority(e.target.value)}
+            fullWidth
+            margin="dense"
+            variant="outlined"
+          >
+            {['Low', 'Medium', 'High'].map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Status"
+            value={taskStatus}
+            onChange={(e) => setTaskStatus(e.target.value)}
+            fullWidth
+            margin="dense"
+            variant="outlined"
+          >
+            {['Pending', 'In Progress', 'Completed'].map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCreateDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleCreateTask} color="primary">
+            Create
           </Button>
         </DialogActions>
       </Dialog>
