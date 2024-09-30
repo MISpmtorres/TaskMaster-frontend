@@ -16,7 +16,7 @@ const TaskForm = ({ onSubmit, initialData }) => {
     const [error, setError] = useState('');
 
     //console.log('Checking token in localStorage:' + user.token);
-    
+
     const resetForm = () => {
         setTitle('');
         setDescription('');
@@ -122,17 +122,18 @@ const TaskForm = ({ onSubmit, initialData }) => {
                 <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                         <Select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                            <MenuItem value="low">Low</MenuItem>
-                            <MenuItem value="medium">Medium</MenuItem>
-                            <MenuItem value="high">High</MenuItem>
+                            <MenuItem value="Low">Low</MenuItem>
+                            <MenuItem value="Medium">Medium</MenuItem>
+                            <MenuItem value="High">High</MenuItem>
                         </Select>
                     </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                         <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-                            <MenuItem value="pending">Pending</MenuItem>
-                            <MenuItem value="completed">Completed</MenuItem>
+                            <MenuItem value="Pending">Pending</MenuItem>
+                            <MenuItem value="In Progress">In Progress</MenuItem>
+                            <MenuItem value="Completed">Completed</MenuItem>
                         </Select>
                     </FormControl>
                 </Grid>

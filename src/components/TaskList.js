@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  List,
   Card,
   CardContent,
   CardActions,
@@ -20,14 +19,13 @@ import {
   InputBase,
   CircularProgress,
   Grid,
+  Container,
+  Box,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import { fetchAllTasksNoAuth, deleteTask, updateTask } from '../api';
 import { format, parseISO } from 'date-fns';
-
-const priorities = ['Low', 'Medium', 'High'];
-const statuses = ['Pending', 'In Progress', 'Completed'];
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -41,17 +39,17 @@ const TaskList = () => {
   const [taskPriority, setTaskPriority] = useState('');
   const [taskStatus, setTaskStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
-  const [dueDateFilter, setDueDateFilter] = useState('');
-  const [loading, setLoading] = useState(true); // New loading state
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [filterDueDate, setFilterDueDate] = useState('');
 
   const userData = JSON.parse(localStorage.getItem('user'));
   const userid2 = userData ? userData.user.id : null;
 
   useEffect(() => {
     const loadTasks = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
         const tasksData = await fetchAllTasksNoAuth();
         const filteredTasks = tasksData.filter(task => task.userId === userid2);
@@ -60,7 +58,7 @@ const TaskList = () => {
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -70,21 +68,18 @@ const TaskList = () => {
   }, [userid2]);
 
   useEffect(() => {
-    const results = tasks
-      .filter(task =>
-        (task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (statusFilter ? task.status === statusFilter : true) &&
-        (priorityFilter ? task.priority === priorityFilter : true) &&
-        (dueDateFilter ? task.dueDate === dueDateFilter : true)
-      )
-      .sort((a, b) => {
-        const statusOrder = { 'Pending': 1, 'In Progress': 2, 'Completed': 3 };
-        return statusOrder[a.status] - statusOrder[b.status];
-      });
+    const results = tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = !filterStatus || filterStatus === '' || task.status === filterStatus;
+        const matchesPriority = !filterPriority || filterPriority === '' || task.priority === filterPriority;
+        const matchesDueDate = !filterDueDate || task.dueDate && parseISO(task.dueDate).toISOString().split('T')[0] === filterDueDate;
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesDueDate;
+    });
 
     setFilteredTasks(results);
-  }, [searchTerm, tasks, statusFilter, priorityFilter, dueDateFilter]);
+  }, [searchTerm, tasks, filterStatus, filterPriority, filterDueDate]);
 
   const handleDelete = async (taskId) => {
     try {
@@ -142,7 +137,7 @@ const TaskList = () => {
   };
 
   return (
-    <>
+    <Container maxWidth="lg">
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
@@ -161,86 +156,82 @@ const TaskList = () => {
         </Toolbar>
       </AppBar>
 
-      <Grid container spacing={2} style={{ padding: '16px' }}>
-        <Grid item xs={12} md={4}>
+      <Box my={4}>
+        <Typography variant="h5" gutterBottom>
+          Tasks
+        </Typography>
+        <Box mb={2}>
           <TextField
             select
-            label="Filter by Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            label="Status"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
             fullWidth
-            margin="normal"
+            margin="dense"
             variant="outlined"
           >
             <MenuItem value="">All</MenuItem>
-            {statuses.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
+            {['Pending', 'In Progress', 'Completed'].map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
               </MenuItem>
             ))}
           </TextField>
-        </Grid>
-        <Grid item xs={12} md={4}>
           <TextField
             select
-            label="Filter by Priority"
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
+            label="Priority"
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
             fullWidth
-            margin="normal"
+            margin="dense"
             variant="outlined"
           >
             <MenuItem value="">All</MenuItem>
-            {priorities.map((priority) => (
-              <MenuItem key={priority} value={priority}>
-                {priority}
+            {['Low', 'Medium', 'High'].map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
               </MenuItem>
             ))}
           </TextField>
-        </Grid>
-        <Grid item xs={12} md={4}>
           <TextField
-            label="Filter by Due Date"
             type="date"
-            value={dueDateFilter}
-            onChange={(e) => setDueDateFilter(e.target.value)}
+            label="Due Date"
+            value={filterDueDate}
+            onChange={(e) => setFilterDueDate(e.target.value)}
             fullWidth
-            margin="normal"
+            margin="dense"
             variant="outlined"
-            InputLabelProps={{ shrink: true }}
           />
-        </Grid>
-      </Grid>
+        </Box>
 
-      <Typography variant="h5" gutterBottom style={{ padding: '16px' }}>
-        Tasks
-      </Typography>
-      {loading ? (
-        <CircularProgress />
-      ) : filteredTasks.length > 0 ? (
-        <Grid container spacing={2}>
-          {filteredTasks.map((task) => (
-            <Grid item xs={12} sm={6} md={4} key={task._id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">{task.title}</Typography>
-                  <Typography color="textSecondary" gutterBottom>
-                    {`${task.description} | Due: ${formatDate(task.dueDate)} | Status: ${task.status}`}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button size="small" onClick={() => handleTaskClick(task)}>Edit</Button>
-                  <IconButton edge="end" onClick={(e) => { e.stopPropagation(); handleDelete(task._id); }}>
-                    <DeleteIcon />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      ) : (
-        <Typography>No tasks found.</Typography>
-      )}
+        {loading ? (
+          <CircularProgress />
+        ) : filteredTasks.length > 0 ? (
+          <Grid container spacing={3}>
+            {filteredTasks.map((task) => (
+              <Grid item xs={12} sm={6} md={4} key={task._id}>
+                <Card elevation={3} style={{ transition: '0.3s', '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.2)' } }}>
+                  <CardContent>
+                    <Typography variant="h6">{task.title}</Typography>
+                    <Typography color="textSecondary" gutterBottom>
+                      {`${task.description} | Due: ${formatDate(task.dueDate)} | Status: ${task.status} | Priority: ${task.priority}`}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small" onClick={() => handleTaskClick(task)}>Edit</Button>
+                    <IconButton edge="end" onClick={(e) => { e.stopPropagation(); handleDelete(task._id); }}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Typography>No tasks found.</Typography>
+        )}
+      </Box>
+
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
         <Alert onClose={() => setError('')} severity="error">
           {error}
@@ -290,7 +281,7 @@ const TaskList = () => {
             margin="dense"
             variant="outlined"
           >
-            {priorities.map((option) => (
+            {['Low', 'Medium', 'High'].map((option) => (
               <MenuItem key={option} value={option}>
                 {option}
               </MenuItem>
@@ -305,7 +296,7 @@ const TaskList = () => {
             margin="dense"
             variant="outlined"
           >
-            {statuses.map((option) => (
+            {['Pending', 'In Progress', 'Completed'].map((option) => (
               <MenuItem key={option} value={option}>
                 {option}
               </MenuItem>
@@ -321,7 +312,7 @@ const TaskList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Container>
   );
 };
 
