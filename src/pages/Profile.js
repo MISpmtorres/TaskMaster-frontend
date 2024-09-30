@@ -2,12 +2,12 @@ import React from 'react';
 import { Container, Typography, Button, Grid, Paper } from '@mui/material';
 
 const Profile = () => {
-  // Sample user data, you might fetch this from context or API
+  const userData = JSON.parse(localStorage.getItem('user')); // Get user data from local storage
   const user = {
-    name: "John Doe",
-    email: "johndoe@example.com",
-    tasksCompleted: 42,
-    tasksInProgress: 8,
+    name: userData ? userData.user.name : "Guest",
+    email: userData ? userData.user.email : "Not available",
+    tasksCompleted: userData ? userData.user.tasksCompleted : 0,
+    tasksInProgress: userData ? userData.user.tasksInProgress : 0,
   };
 
   return (
@@ -47,7 +47,7 @@ const Profile = () => {
             </Button>
           </Grid>
           <Grid item>
-            <Button variant="outlined" color="secondary" href="/settings">
+            <Button variant="outlined" color="secondary" href="/account-settings">
               Account Settings
             </Button>
           </Grid>

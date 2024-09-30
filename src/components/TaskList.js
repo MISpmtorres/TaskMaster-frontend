@@ -26,6 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import { fetchAllTasksNoAuth, deleteTask, updateTask, createTask } from '../api';
 import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -45,6 +46,7 @@ const TaskList = () => {
   const [filterPriority, setFilterPriority] = useState('');
   const [filterDueDate, setFilterDueDate] = useState('');
 
+  const navigate = useNavigate(); // Initialize useNavigate
   const userData = JSON.parse(localStorage.getItem('user'));
   const userid2 = userData ? userData.user.id : null;
 
@@ -58,6 +60,9 @@ const TaskList = () => {
         setFilteredTasks(filteredTasks);
       } catch (err) {
         setError(err.message);
+        // Handle logout and redirect to login page
+        localStorage.removeItem('user'); // Clear user data
+        navigate('/login'); // Redirect to login page
       } finally {
         setLoading(false);
       }
@@ -65,8 +70,10 @@ const TaskList = () => {
 
     if (userid2) {
       loadTasks();
+    } else {
+      navigate('/login'); // Redirect if no user ID found
     }
-  }, [userid2]);
+  }, [userid2, navigate]);
 
   useEffect(() => {
     const results = tasks.filter(task => {

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useAuthContext } from './useAuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export const useSignup = () => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const { dispatch } = useAuthContext();
+    const navigate = useNavigate(); // Initialize the navigate function
 
     const signup = async (email, password) => {
         setIsLoading(true);
@@ -15,7 +17,6 @@ export const useSignup = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        
 
         const json = await response.json();
 
@@ -26,7 +27,16 @@ export const useSignup = () => {
             localStorage.setItem('user', JSON.stringify(json));
             dispatch({ type: 'LOGIN', payload: json });
             setIsLoading(false);
+            
+            // Call logout after signup
+            logout(); // Call logout to clear the session
         }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('user');
+        dispatch({ type: 'LOGOUT' });
+        navigate('/login'); // Redirect to the login page after logout
     };
 
     return { signup, isLoading, error };

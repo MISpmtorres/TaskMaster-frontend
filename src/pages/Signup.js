@@ -7,11 +7,17 @@ const Signup = () => {
     const { signup, isLoading, error } = useSignup();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate(); // Use navigate to redirect
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        signup(email, password);
+        const success = await signup(email, password);
+        if (success) {
+            // Optionally clear any user data or logout logic
+            // For example: localStorage.removeItem('user');
+            console.log('Signup Successs, going to /login');
+            navigate('/login'); // Redirect to login page
+        }
     };
 
     return (
@@ -38,7 +44,7 @@ const Signup = () => {
                         onChange={(e) => setPassword(e.target.value)} 
                         required 
                     />
-                    {error && <Typography color="error" align="center">{error}</Typography>} {/* Display error message */}
+                    {error && <Typography color="error" align="center">{error}</Typography>}
                     <Button 
                         type="submit" 
                         fullWidth 
@@ -51,7 +57,7 @@ const Signup = () => {
                     </Button>
                 </form>
                 <Button 
-                    onClick={() => navigate('/')} // Navigate to home page
+                    onClick={() => navigate('/login')} 
                     fullWidth 
                     variant="outlined" 
                     color="secondary" 

@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
 import { Container, Typography, Button, Grid, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import TaskForm from '../components/TaskForm';
-import { useAuthContext } from '../hooks/useAuthContext'; // Import the auth context
+// Import the auth context if needed in the future
+// import { useAuthContext } from '../hooks/useAuthContext'; 
 
 const Home = () => {
   const [open, setOpen] = useState(false);
-  const { user } = useAuthContext(); // Get the user from the auth context
+
+  const getUserId = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData && parsedData.user ? parsedData.user.id : null;
+      }
+      return null; // No user data in localStorage
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null; // Return null in case of parsing error
+    }
+  };
+
+  const user = getUserId();
 
   const handleTaskSubmit = (taskData) => {
     // Add your logic to save the task (API call)
